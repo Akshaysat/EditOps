@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EditOps — Money Mediia</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #0d1117;
+      --surface:      #161b22;
+      --border:       #30363d;
+      --accent:       #58a6ff;
+      --accent-hover: #79b8ff;
+      --text:         #e6edf3;
+      --muted:        #8b949e;
+      --success:      #3fb950;
+      --error:        #f85149;
+      --radius:       10px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      padding: 14px 32px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+      z-index: 10;
+    }
+    .logo { font-size: 18px; font-weight: 700; }
+    .brand {
+      font-size: 12px;
+      color: var(--muted);
+      background: var(--surface);
+      padding: 2px 10px;
+      border-radius: 100px;
+      border: 1px solid var(--border);
+      letter-spacing: 0.3px;
+    }
+
+    /* ── Layout ── */
+    .container { max-width: 680px; margin: 36px auto; padding: 0 20px 60px; }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 4px;
+      margin-bottom: 24px;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 9px 4px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .tab-btn:hover:not(.active) { color: var(--text); }
+    .tab-btn.active {
+      background: var(--bg);
+      color: var(--text);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+    }
+
+    /* ── Panel ── */
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    /* ── Card ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+    }
+    .card h2 { font-size: 17px; font-weight: 600; margin-bottom: 4px; }
+    .card .desc { font-size: 13px; color: var(--muted); margin-bottom: 24px; line-height: 1.5; }
+
+    /* ── Drop Zone ── */
+    .dropzone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 28px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.15s;
+      margin-bottom: 22px;
+      user-select: none;
+    }
+    .dropzone:hover, .dropzone.dragover {
+      border-color: var(--accent);
+      background: rgba(88,166,255,0.05);
+    }
+    .dropzone .dz-icon { font-size: 30px; margin-bottom: 8px; }
+    .dropzone .dz-label { font-size: 14px; color: var(--muted); }
+    .dropzone .dz-label b { color: var(--accent); text-decoration: underline; }
+    .dropzone .dz-file-info {
+      display: none;
+      margin-top: 8px;
+      font-size: 13px;
+      color: var(--success);
+      font-weight: 500;
+    }
+    .dropzone.has-file .dz-file-info { display: block; }
+    .dropzone.has-file .dz-default { display: none; }
+
+    /* ── Fields ── */
+    .field { margin-bottom: 18px; }
+    .field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+      margin-bottom: 7px;
+    }
+    .field input[type=text],
+    .field input[type=number] {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 9px 13px;
+      color: var(--text);
+      font-size: 14px;
+      transition: border-color 0.15s;
+    }
+    .field input:focus { outline: none; border-color: var(--accent); }
+    .field .hint { font-size: 12px; color: var(--muted); margin-top: 5px; }
+
+    /* ── Radio Group ── */
+    .radio-group { display: flex; gap: 8px; }
+    .radio-opt { flex: 1; }
+    .radio-opt input[type=radio] { display: none; }
+    .radio-opt label {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 9px 8px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--muted);
+      transition: all 0.15s;
+      font-weight: normal;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+    .radio-opt input:checked + label {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(88,166,255,0.08);
+    }
+
+    /* ── Presets ── */
+    .presets { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+    .preset {
+      padding: 4px 12px;
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .preset:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── Conditional Sections ── */
+    .cond { display: none; }
+    .cond.active { display: block; }
+
+    /* ── Submit ── */
+    .submit-btn {
+      width: 100%;
+      padding: 12px;
+      background: var(--accent);
+      color: #0d1117;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s;
+      margin-top: 6px;
+      letter-spacing: 0.2px;
+    }
+    .submit-btn:hover { background: var(--accent-hover); }
+    .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ── Progress ── */
+    .progress-wrap { display: none; margin-top: 18px; }
+    .progress-wrap.visible { display: block; }
+    .progress-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 7px;
+    }
+    .progress-bar { height: 4px; background: var(--border); border-radius: 100px; overflow: hidden; }
+    .progress-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 100px;
+      width: 0%;
+      transition: width 0.25s ease;
+    }
+
+    /* ── Result ── */
+    .result-box {
+      display: none;
+      margin-top: 18px;
+      padding: 18px;
+      border: 1px solid var(--success);
+      border-radius: var(--radius);
+      background: rgba(63,185,80,0.07);
+      text-align: center;
+    }
+    .result-box.visible { display: block; }
+    .result-box .result-title { font-size: 15px; font-weight: 600; color: var(--success); margin-bottom: 12px; }
+    .download-btn {
+      display: inline-block;
+      padding: 9px 22px;
+      background: var(--success);
+      color: #0d1117;
+      border-radius: 7px;
+      font-weight: 700;
+      font-size: 14px;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+    }
+
+    /* ── Error ── */
+    .error-box {
+      display: none;
+      margin-top: 18px;
+      padding: 13px 16px;
+      border: 1px solid var(--error);
+      border-radius: var(--radius);
+      background: rgba(248,81,73,0.07);
+      color: var(--error);
+      font-size: 13px;
+    }
+    .error-box.visible { display: block; }
+
+    /* ── Merge file list ── */
+    .merge-list { margin-bottom: 16px; }
+    .merge-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 13px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      margin-bottom: 6px;
+      font-size: 13px;
+    }
+    .merge-item .mi-idx { color: var(--muted); font-size: 12px; min-width: 20px; }
+    .merge-item .mi-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .merge-item .mi-size { color: var(--muted); font-size: 12px; white-space: nowrap; }
+
+    /* ── Divider ── */
+    .divider { border: none; border-top: 1px solid var(--border); margin: 22px 0; }
+  </style>
+</head>
+<body>
+
+<header>
+  <span class="logo">🎬 EditOps</span>
+  <span class="brand">Money Mediia</span>
+</header>
+
+<div class="container">
+
+  <!-- Tab bar -->
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="speed"    onclick="switchTab(this,'speed')">⚡ Speed Up</button>
+    <button class="tab-btn"        data-tab="compress" onclick="switchTab(this,'compress')">📦 Compress</button>
+    <button class="tab-btn"        data-tab="trim"     onclick="switchTab(this,'trim')">✂️ Trim</button>
+    <button class="tab-btn"        data-tab="merge"    onclick="switchTab(this,'merge')">🔗 Merge</button>
+    <button class="tab-btn"        data-tab="convert"  onclick="switchTab(this,'convert')">🔄 Convert</button>
+  </div>
+
+  <!-- ══ SPEED UP ══ -->
+  <div id="panel-speed" class="panel active">
+    <div class="card">
+      <h2>Speed Up Video</h2>
+      <p class="desc">Increase playback speed while preserving audio pitch and original quality. Set either a target duration or a custom multiplier.</p>
+
+      <div class="dropzone" id="dz-speed" onclick="document.getElementById('f-speed').click()">
+        <div class="dz-icon">🎥</div>
+        <div class="dz-default">
+          <div class="dz-label">Drop your video here or <b>browse</b></div>
+        </div>
+        <div class="dz-file-info" id="fi-speed"></div>
+        <input type="file" id="f-speed" accept="video/*" style="display:none" onchange="onFile(this,'speed')">
+      </div>
+
+      <div class="field">
+        <label>Mode</label>
+        <div class="radio-group">
+          <div class="radio-opt">
+            <input type="radio" name="spd-mode" id="spd-m-mult" value="multiplier" checked onchange="showCond('speed',this.value)">
+            <label for="spd-m-mult">⚡ Speed Multiplier</label>
+          </div>
+          <div class="radio-opt">
+            <input type="radio" name="spd-mode" id="spd-m-dur" value="duration" onchange="showCond('speed',this.value)">
+            <label for="spd-m-dur">🎯 Target Duration</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="cond active" id="cond-speed-multiplier">
+        <div class="field">
+          <label>Multiplier</label>
+          <input type="number" id="spd-mult-val" value="1.1" min="0.1" max="16" step="0.05" placeholder="e.g. 1.25">
+          <div class="hint">1.0 = normal · 1.5 = 50% faster · 2.0 = double speed</div>
+        </div>
+      </div>
+
+      <div class="cond" id="cond-speed-duration">
+        <div class="field">
+          <label>Target Duration</label>
+          <input type="text" id="spd-dur-val" placeholder="e.g. 10:50 or 650">
+          <div class="hint">Format: mm:ss &nbsp;·&nbsp; h:mm:ss &nbsp;·&nbsp; or plain seconds</div>
+        </div>
+      </div>
+
+      <button class="submit-btn" onclick="submit('speed')">Process Video</button>
+      <div class="progress-wrap" id="pw-speed">
+        <div class="progress-meta"><span id="pl-speed">Uploading…</span><span id="pp-speed">0%</span></div>
+        <div class="progress-bar"><div class="progress-fill" id="pf-speed"></div></div>
+      </div>
+      <div class="result-box" id="rb-speed"></div>
+      <div class="error-box"  id="eb-speed"></div>
+    </div>
+  </div>
+
+  <!-- ══ COMPRESS ══ -->
+  <div id="panel-compress" class="panel">
+    <div class="card">
+      <h2>Compress Video</h2>
+      <p class="desc">Shrink your video to a target file size using two-pass encoding for maximum quality at the chosen size.</p>
+
+      <div class="dropzone" id="dz-compress" onclick="document.getElementById('f-compress').click()">
+        <div class="dz-icon">🎥</div>
+        <div class="dz-default">
+          <div class="dz-label">Drop your video here or <b>browse</b></div>
+        </div>
+        <div class="dz-file-info" id="fi-compress"></div>
+        <input type="file" id="f-compress" accept="video/*" style="display:none" onchange="onFile(this,'compress')">
+      </div>
+
+      <div class="field">
+        <label>Target File Size (MB)</label>
+        <input type="number" id="cmp-size" value="900" min="10" placeholder="e.g. 900">
+        <div class="presets">
+          <button class="preset" onclick="setVal('cmp-size',500)">500 MB</button>
+          <button class="preset" onclick="setVal('cmp-size',900)">900 MB</button>
+          <button class="preset" onclick="setVal('cmp-size',1900)">1.9 GB</button>
+          <button class="preset" onclick="setVal('cmp-size',3800)">3.8 GB</button>
+        </div>
+        <div class="hint">Uses decimal MB (1 GB = 1000 MB)</div>
+      </div>
+
+      <button class="submit-btn" onclick="submit('compress')">Compress Video</button>
+      <div class="progress-wrap" id="pw-compress">
+        <div class="progress-meta"><span id="pl-compress">Uploading…</span><span id="pp-compress">0%</span></div>
+        <div class="progress-bar"><div class="progress-fill" id="pf-compress"></div></div>
+      </div>
+      <div class="result-box" id="rb-compress"></div>
+      <div class="error-box"  id="eb-compress"></div>
+    </div>
+  </div>
+
+  <!-- ══ TRIM ══ -->
+  <div id="panel-trim" class="panel">
+    <div class="card">
+      <h2>Trim Video</h2>
+      <p class="desc">Cut your video at a specific timestamp and keep either the portion before or after the cut point.</p>
+
+      <div class="dropzone" id="dz-trim" onclick="document.getElementById('f-trim').click()">
+        <div class="dz-icon">🎥</div>
+        <div class="dz-default">
+          <div class="dz-label">Drop your video here or <b>browse</b></div>
+        </div>
+        <div class="dz-file-info" id="fi-trim"></div>
+        <input type="file" id="f-trim" accept="video/*" style="display:none" onchange="onFile(this,'trim')">
+      </div>
+
+      <div class="field">
+        <label>Cut At</label>
+        <input type="text" id="trm-cut" placeholder="e.g. 6:07 or 367">
+        <div class="hint">Format: mm:ss &nbsp;·&nbsp; h:mm:ss &nbsp;·&nbsp; or plain seconds</div>
+      </div>
+
+      <div class="field">
+        <label>Keep</label>
+        <div class="radio-group">
+          <div class="radio-opt">
+            <input type="radio" name="trm-keep" id="trm-before" value="before" checked>
+            <label for="trm-before">⬅️ Before cut point</label>
+          </div>
+          <div class="radio-opt">
+            <input type="radio" name="trm-keep" id="trm-after" value="after">
+            <label for="trm-after">➡️ After cut point</label>
+          </div>
+        </div>
+      </div>
+
+      <button class="submit-btn" onclick="submit('trim')">Trim Video</button>
+      <div class="progress-wrap" id="pw-trim">
+        <div class="progress-meta"><span id="pl-trim">Uploading…</span><span id="pp-trim">0%</span></div>
+        <div class="progress-bar"><div class="progress-fill" id="pf-trim"></div></div>
+      </div>
+      <div class="result-box" id="rb-trim"></div>
+      <div class="error-box"  id="eb-trim"></div>
+    </div>
+  </div>
+
+  <!-- ══ MERGE ══ -->
+  <div id="panel-merge" class="panel">
+    <div class="card">
+      <h2>Merge Videos</h2>
+      <p class="desc">Combine multiple videos into one file. Videos are merged in the order they appear below.</p>
+
+      <div class="dropzone" id="dz-merge" onclick="document.getElementById('f-merge').click()">
+        <div class="dz-icon">🎬</div>
+        <div class="dz-label">Drop multiple videos here or <b>browse</b></div>
+        <input type="file" id="f-merge" accept="video/*" multiple style="display:none" onchange="onMergeFiles(this)">
+      </div>
+
+      <div class="merge-list" id="merge-list"></div>
+
+      <button class="submit-btn" onclick="submit('merge')">Merge Videos</button>
+      <div class="progress-wrap" id="pw-merge">
+        <div class="progress-meta"><span id="pl-merge">Uploading…</span><span id="pp-merge">0%</span></div>
+        <div class="progress-bar"><div class="progress-fill" id="pf-merge"></div></div>
+      </div>
+      <div class="result-box" id="rb-merge"></div>
+      <div class="error-box"  id="eb-merge"></div>
+    </div>
+  </div>
+
+
+  <!-- ══ CONVERT ══ -->
+  <div id="panel-convert" class="panel">
+    <div class="card">
+      <h2>Convert Video Format</h2>
+      <p class="desc">Convert your video to a different format. Supports MP4, MOV, AVI, MKV, WebM, and GIF.</p>
+
+      <div class="dropzone" id="dz-convert" onclick="document.getElementById('f-convert').click()">
+        <div class="dz-icon">🎥</div>
+        <div class="dz-default">
+          <div class="dz-label">Drop your video here or <b>browse</b></div>
+        </div>
+        <div class="dz-file-info" id="fi-convert"></div>
+        <input type="file" id="f-convert" accept="video/*" style="display:none" onchange="onFile(this,'convert')">
+      </div>
+
+      <div class="field">
+        <label>Convert To</label>
+        <div class="radio-group" style="flex-wrap:wrap;gap:8px;">
+          <div class="radio-opt">
+            <input type="radio" name="cvt-fmt" id="cvt-mp4"  value="mp4"  checked>
+            <label for="cvt-mp4">MP4</label>
+          </div>
+          <div class="radio-opt">
+            <input type="radio" name="cvt-fmt" id="cvt-mov"  value="mov">
+            <label for="cvt-mov">MOV</label>
+          </div>
+          <div class="radio-opt">
+            <input type="radio" name="cvt-fmt" id="cvt-avi"  value="avi">
+            <label for="cvt-avi">AVI</label>
+          </div>
+          <div class="radio-opt">
+            <input type="radio" name="cvt-fmt" id="cvt-mkv"  value="mkv">
+            <label for="cvt-mkv">MKV</label>
+          </div>
+          <div class="radio-opt">
+            <input type="radio" name="cvt-fmt" id="cvt-webm" value="webm">
+            <label for="cvt-webm">WebM</label>
+          </div>
+          <div class="radio-opt">
+            <input type="radio" name="cvt-fmt" id="cvt-gif"  value="gif">
+            <label for="cvt-gif">GIF</label>
+          </div>
+        </div>
+        <div class="hint">GIF is exported at 15fps · 640px wide for optimal size</div>
+      </div>
+
+      <button class="submit-btn" onclick="submit('convert')">Convert Video</button>
+      <div class="progress-wrap" id="pw-convert">
+        <div class="progress-meta"><span id="pl-convert">Uploading…</span><span id="pp-convert">0%</span></div>
+        <div class="progress-bar"><div class="progress-fill" id="pf-convert"></div></div>
+      </div>
+      <div class="result-box" id="rb-convert"></div>
+      <div class="error-box"  id="eb-convert"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+let mergeFiles = [];
+
+// ── Tab switching ──────────────────────────────────────────────────────────
+function switchTab(btn, tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('panel-' + tab).classList.add('active');
+}
+
+// ── Conditional sections (speed mode) ─────────────────────────────────────
+function showCond(op, val) {
+  document.querySelectorAll(`[id^="cond-${op}-"]`).forEach(el => el.classList.remove('active'));
+  const el = document.getElementById(`cond-${op}-${val}`);
+  if (el) el.classList.add('active');
+}
+
+// ── File handling ──────────────────────────────────────────────────────────
+function onFile(input, tab) {
+  const f = input.files[0];
+  if (!f) return;
+  const dz = document.getElementById('dz-' + tab);
+  dz.classList.add('has-file');
+  document.getElementById('fi-' + tab).textContent = `✓  ${f.name}  (${fmtSize(f.size)})`;
+}
+
+function onMergeFiles(input) {
+  mergeFiles = Array.from(input.files);
+  renderMergeList();
+}
+
+function renderMergeList() {
+  const list = document.getElementById('merge-list');
+  if (!mergeFiles.length) { list.innerHTML = ''; return; }
+  list.innerHTML = mergeFiles.map((f, i) => `
+    <div class="merge-item">
+      <span class="mi-idx">#${i + 1}</span>
+      <span class="mi-name">${f.name}</span>
+      <span class="mi-size">${fmtSize(f.size)}</span>
+    </div>`).join('');
+}
+
+// ── Drag & drop ────────────────────────────────────────────────────────────
+document.querySelectorAll('.dropzone').forEach(dz => {
+  dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('dragover'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault();
+    dz.classList.remove('dragover');
+    const tab = dz.id.replace('dz-', '');
+    if (tab === 'merge') {
+      mergeFiles = Array.from(e.dataTransfer.files);
+      renderMergeList();
+    } else {
+      const inp = document.getElementById('f-' + tab);
+      const dt  = new DataTransfer();
+      if (e.dataTransfer.files[0]) dt.items.add(e.dataTransfer.files[0]);
+      inp.files = dt.files;
+      onFile(inp, tab);
+    }
+  });
+});
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function setVal(id, v) { document.getElementById(id).value = v; }
+
+function fmtSize(b) {
+  if (b >= 1e9) return (b / 1e9).toFixed(1) + ' GB';
+  if (b >= 1e6) return (b / 1e6).toFixed(1) + ' MB';
+  return (b / 1e3).toFixed(0) + ' KB';
+}
+
+function resetUI(tab) {
+  ['pw','rb','eb'].forEach(p => {
+    const el = document.getElementById(p + '-' + tab);
+    if (el) el.classList.remove('visible');
+  });
+  const pf = document.getElementById('pf-' + tab);
+  if (pf) { pf.style.transition = 'none'; pf.style.width = '0%'; }
+}
+
+function showProgress(tab, pct, label) {
+  document.getElementById('pw-' + tab).classList.add('visible');
+  document.getElementById('pl-' + tab).textContent = label;
+  document.getElementById('pp-' + tab).textContent  = pct + '%';
+  const pf = document.getElementById('pf-' + tab);
+  pf.style.transition = 'width 0.25s ease';
+  pf.style.width = pct + '%';
+}
+
+function showResult(tab, filename, url) {
+  document.getElementById('pw-' + tab).classList.remove('visible');
+  const rb = document.getElementById('rb-' + tab);
+  rb.innerHTML = `
+    <div class="result-title">✓ Done! Your video is ready.</div>
+    <a class="download-btn" href="${url}" download="${filename}">⬇ Download ${filename}</a>`;
+  rb.classList.add('visible');
+}
+
+function showError(tab, msg) {
+  document.getElementById('pw-' + tab).classList.remove('visible');
+  const eb = document.getElementById('eb-' + tab);
+  eb.textContent = '✕ ' + msg;
+  eb.classList.add('visible');
+}
+
+// ── Submit ─────────────────────────────────────────────────────────────────
+function submit(tab) {
+  const form = new FormData();
+  let endpoint = '/' + tab;
+
+  if (tab === 'speed') {
+    const file = document.getElementById('f-speed').files[0];
+    if (!file) return alert('Please select a video first.');
+    const mode = document.querySelector('input[name="spd-mode"]:checked').value;
+    const val  = mode === 'duration'
+      ? document.getElementById('spd-dur-val').value.trim()
+      : document.getElementById('spd-mult-val').value.trim();
+    if (!val) return alert('Please enter a ' + (mode === 'duration' ? 'target duration.' : 'speed multiplier.'));
+    form.append('video', file);
+    form.append('mode',  mode);
+    form.append('value', val);
+
+  } else if (tab === 'compress') {
+    const file = document.getElementById('f-compress').files[0];
+    if (!file) return alert('Please select a video first.');
+    const sz = document.getElementById('cmp-size').value;
+    if (!sz || sz <= 0) return alert('Please enter a valid target size.');
+    form.append('video',     file);
+    form.append('target_mb', sz);
+
+  } else if (tab === 'trim') {
+    const file = document.getElementById('f-trim').files[0];
+    if (!file) return alert('Please select a video first.');
+    const cut  = document.getElementById('trm-cut').value.trim();
+    const keep = document.querySelector('input[name="trm-keep"]:checked').value;
+    if (!cut) return alert('Please enter a cut point.');
+    form.append('video',  file);
+    form.append('cut_at', cut);
+    form.append('keep',   keep);
+
+  } else if (tab === 'merge') {
+    if (mergeFiles.length < 2) return alert('Please select at least 2 videos.');
+    mergeFiles.forEach(f => form.append('videos', f));
+
+  } else if (tab === 'convert') {
+    const file = document.getElementById('f-convert').files[0];
+    if (!file) return alert('Please select a video first.');
+    const fmt = document.querySelector('input[name="cvt-fmt"]:checked').value;
+    form.append('video',  file);
+    form.append('format', fmt);
+  }
+
+  resetUI(tab);
+
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', endpoint);
+  xhr.responseType = 'blob';
+
+  // Upload progress
+  xhr.upload.onprogress = e => {
+    if (!e.lengthComputable) return;
+    const pct = Math.round(e.loaded / e.total * 100);
+    showProgress(tab, pct, pct < 100 ? 'Uploading…' : 'Processing…');
+
+    // After upload completes, animate a slow crawl to show server work
+    if (pct === 100) {
+      const pf = document.getElementById('pf-' + tab);
+      setTimeout(() => {
+        pf.style.transition = 'width 30s linear';
+        pf.style.width = '92%';
+      }, 100);
+    }
+  };
+
+  xhr.onload = () => {
+    if (xhr.status === 200) {
+      // Extract filename from Content-Disposition header
+      const cd = xhr.getResponseHeader('Content-Disposition') || '';
+      const m  = cd.match(/filename[^;=\n]*=["']?([^"';\n]*)["']?/);
+      const filename = m ? decodeURIComponent(m[1]) : 'output.mp4';
+      const url = URL.createObjectURL(xhr.response);
+      showResult(tab, filename, url);
+    } else {
+      xhr.response.text().then(text => {
+        let msg = 'Processing failed. Please try again.';
+        try { msg = JSON.parse(text).error; } catch {}
+        showError(tab, msg);
+      });
+    }
+  };
+
+  xhr.onerror = () => showError(tab, 'Network error — is the server running?');
+
+  xhr.send(form);
+}
+</script>
+</body>
+</html>
