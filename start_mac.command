@@ -40,5 +40,17 @@ source venv/bin/activate
 echo "📦  Checking Python dependencies..."
 pip install -r requirements.txt -q
 
-# Launch app (auto-update runs inside app.py on startup)
-python app.py
+# Launch app in background (auto-update runs inside app.py on startup)
+python app.py &
+SERVER_PID=$!
+
+# Wait until server is actually responding, then open browser
+echo "⏳  Waiting for server to start..."
+until curl -s http://localhost:5001 > /dev/null 2>&1; do
+  sleep 0.5
+done
+echo "🌐  Opening browser..."
+open http://localhost:5001
+
+# Keep terminal open until Ctrl+C
+wait $SERVER_PID
