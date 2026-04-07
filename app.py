@@ -380,7 +380,7 @@ if __name__ == '__main__':
         print('   Windows: https://ffmpeg.org/download.html\n')
     else:
         print('\n✅  Starting server...')
-        print('👉  Open your browser: http://localhost:5000')
+        print('👉  Open your browser: http://localhost:5001')
         print('    (Press Ctrl+C to stop)\n')
 
-    app.run(debug=False, host='0.0.0.0', port=5000, threaded=True)
+    app.run(debug=False, host='0.0.0.0', port=5001, threaded=True)
