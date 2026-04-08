@@ -1,5 +1,5 @@
 from flask import Flask, request, render_template, send_file, jsonify
-import subprocess, os, uuid, json, tempfile, threading, time, sys
+import subprocess, os, uuid, json, tempfile, threading, time, sys, glob
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024 * 1024  # 20 GB max upload
@@ -361,6 +361,51 @@ def convert_route():
     cleanup_later(output_path)
     out_name = f'{stem(file.filename)}{cfg["ext"]}'
     return send_file(output_path, as_attachment=True, download_name=out_name)
+
+
+@app.route('/ytdl', methods=['POST'])
+def ytdl_route():
+    url = request.form.get('url', '').strip()
+    quality = request.form.get('quality', '720')
+
+    if not url:
+        return jsonify(error='Please provide a YouTube URL.'), 400
+
+    uid = str(uuid.uuid4())
+    out_tmpl = os.path.join(TEMP_DIR, f'vt_yt_{uid}.%(ext)s')
+
+    if quality == 'audio':
+        cmd = ['yt-dlp', '-x', '--audio-format', 'mp3', '--audio-quality', '0',
+               '-o', out_tmpl, url]
+    else:
+        cmd = ['yt-dlp',
+               '-f', f'bestvideo[height<={quality}][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<={quality}]+bestaudio/best[height<={quality}]',
+               '--merge-output-format', 'mp4',
+               '-o', out_tmpl, url]
+
+    r = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
+
+    if r.returncode != 0:
+        err = r.stderr[-300:] if r.stderr else 'Unknown error'
+        return jsonify(error=f'Download failed. {err}'), 500
+
+    # Find the downloaded file
+    matches = glob.glob(os.path.join(TEMP_DIR, f'vt_yt_{uid}.*'))
+    if not matches:
+        return jsonify(error='Downloaded file not found.'), 500
+
+    output_path = matches[0]
+    ext = os.path.splitext(output_path)[1]
+
+    # Get a clean filename from the video title
+    title_r = subprocess.run(['yt-dlp', '--get-title', url],
+                             capture_output=True, text=True, timeout=30)
+    raw_title = title_r.stdout.strip() or 'video'
+    safe_title = ''.join(c for c in raw_title if c.isalnum() or c in ' -_').strip()[:80]
+    download_name = f'{safe_title}{ext}' if safe_title else f'video{ext}'
+
+    cleanup_later(output_path)
+    return send_file(output_path, as_attachment=True, download_name=download_name)
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────

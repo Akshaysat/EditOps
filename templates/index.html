@@ -306,6 +306,7 @@
     <button class="tab-btn"        data-tab="trim"     onclick="switchTab(this,'trim')">✂️ Trim</button>
     <button class="tab-btn"        data-tab="merge"    onclick="switchTab(this,'merge')">🔗 Merge</button>
     <button class="tab-btn"        data-tab="convert"  onclick="switchTab(this,'convert')">🔄 Convert</button>
+    <button class="tab-btn"        data-tab="ytdl"     onclick="switchTab(this,'ytdl')">▶️ YouTube</button>
   </div>
 
   <!-- ══ SPEED UP ══ -->
@@ -469,6 +470,53 @@
     </div>
   </div>
 
+
+  <!-- ══ YOUTUBE DOWNLOADER ══ -->
+  <div id="panel-ytdl" class="panel">
+    <div class="card">
+      <h2>YouTube Downloader</h2>
+      <p class="desc">Download any YouTube video locally. Paste the URL, choose quality, and hit Download.</p>
+
+      <div class="field">
+        <label>YouTube URL</label>
+        <input type="text" id="ytdl-url" placeholder="https://www.youtube.com/watch?v=...">
+      </div>
+
+      <div class="field">
+        <label>Quality</label>
+        <div class="radio-group">
+          <div class="radio-opt">
+            <input type="radio" name="ytdl-q" id="ytdl-1080" value="1080">
+            <label for="ytdl-1080">1080p</label>
+          </div>
+          <div class="radio-opt">
+            <input type="radio" name="ytdl-q" id="ytdl-720" value="720" checked>
+            <label for="ytdl-720">720p</label>
+          </div>
+          <div class="radio-opt">
+            <input type="radio" name="ytdl-q" id="ytdl-480" value="480">
+            <label for="ytdl-480">480p</label>
+          </div>
+          <div class="radio-opt">
+            <input type="radio" name="ytdl-q" id="ytdl-audio" value="audio">
+            <label for="ytdl-audio">🎵 Audio only (MP3)</label>
+          </div>
+        </div>
+      </div>
+
+      <button class="submit-btn" onclick="submitYT()">Download Video</button>
+
+      <div class="progress-wrap" id="pw-ytdl">
+        <div class="progress-meta">
+          <span id="pl-ytdl">Downloading… this may take a minute</span>
+          <span id="pp-ytdl"></span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="pf-ytdl"></div></div>
+      </div>
+      <div class="result-box" id="rb-ytdl"></div>
+      <div class="error-box"  id="eb-ytdl"></div>
+    </div>
+  </div>
 
   <!-- ══ CONVERT ══ -->
   <div id="panel-convert" class="panel">
@@ -723,6 +771,62 @@ function submit(tab) {
   };
 
   xhr.onerror = () => showError(tab, 'Network error — is the server running?');
+
+  xhr.send(form);
+}
+
+// ── YouTube Download ───────────────────────────────────────────────────────
+function submitYT() {
+  const url     = document.getElementById('ytdl-url').value.trim();
+  const quality = document.querySelector('input[name="ytdl-q"]:checked').value;
+  if (!url) return alert('Please paste a YouTube URL first.');
+
+  resetUI('ytdl');
+  document.getElementById('pw-ytdl').classList.add('visible');
+  document.getElementById('pl-ytdl').textContent = 'Downloading… this may take a minute';
+
+  // Animate a slow crawl since download duration is unknown
+  const pf = document.getElementById('pf-ytdl');
+  pf.style.transition = 'none'; pf.style.width = '5%';
+  setTimeout(() => { pf.style.transition = 'width 60s linear'; pf.style.width = '90%'; }, 100);
+
+  const form = new FormData();
+  form.append('url', url);
+  form.append('quality', quality);
+
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', '/ytdl');
+  xhr.responseType = 'blob';
+
+  xhr.onload = () => {
+    document.getElementById('pw-ytdl').classList.remove('visible');
+    if (xhr.status === 200) {
+      const cd       = xhr.getResponseHeader('Content-Disposition') || '';
+      const m        = cd.match(/filename[^;=\n]*=["']?([^"';\n]*)["']?/);
+      const filename = m ? decodeURIComponent(m[1]) : 'video.mp4';
+      const dlUrl    = URL.createObjectURL(xhr.response);
+      const rb = document.getElementById('rb-ytdl');
+      rb.innerHTML = `
+        <div class="result-title">✓ Ready to download!</div>
+        <a class="download-btn" href="${dlUrl}" download="${filename}">⬇ Download ${filename}</a>`;
+      rb.classList.add('visible');
+    } else {
+      xhr.response.text().then(text => {
+        let msg = 'Download failed.';
+        try { msg = JSON.parse(text).error; } catch {}
+        const eb = document.getElementById('eb-ytdl');
+        eb.textContent = '✕ ' + msg;
+        eb.classList.add('visible');
+      });
+    }
+  };
+
+  xhr.onerror = () => {
+    document.getElementById('pw-ytdl').classList.remove('visible');
+    const eb = document.getElementById('eb-ytdl');
+    eb.textContent = '✕ Network error — is the server running?';
+    eb.classList.add('visible');
+  };
 
   xhr.send(form);
 }
